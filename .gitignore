@@ -1,0 +1,7 @@
+checkpoints/
+correct_poses/
+debug/
+networks/
+results_old/
+training-results/
+*.ods

@@ -419,7 +419,7 @@ class ProjectedGANLoss(Loss): # Anya
                 real_img_tmp = {'image': real_img_tmp} # torch.Size([8, 3, 128, 128]) # PGAN value
 
                 real_logits = self.run_D(real_img_tmp, real_c, blur_sigma=blur_sigma) # PGAN value
-                loss_Dreal = (torch.nn.functional.relu(torch.ones_like(real_logits) - real_logits)).mean() # PGAN value
+                loss_Dreal = (torch.nn.functional.relu(torch.ones_like(real_logits) - real_logits)).mean() # PGAN value - is it the same as in PGAN?
 
                 # Logging
                 training_stats.report('Loss/scores/real', real_logits)

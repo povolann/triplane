@@ -351,7 +351,7 @@ class ProjectedGANLoss(Loss): # Anya
                 f = torch.arange(-blur_size, blur_size + 1, device=img.device).div(blur_sigma).square().neg().exp2()
                 img = upfirdn2d.filter2d(img, f / f.sum())
 
-        logits = self.D(img, c)
+        logits = self.D(img, c) # PGAN value - img, logits
         return logits
 
     def accumulate_gradients(self, phase, real_img, real_c, gen_z, gen_c, gain, cur_nimg): 
@@ -381,9 +381,9 @@ class ProjectedGANLoss(Loss): # Anya
             with torch.autograd.profiler.record_function('Gmain_forward'):
                 #gen_img = self.run_G(gen_z, gen_c)
                 gen_img, _gen_ws = self.run_G(gen_z, gen_c, swapping_prob=swapping_prob, neural_rendering_resolution=neural_rendering_resolution)
-                # gen_img['image'].shape = torch.Size([8, 3, 64, 64])
-                gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma)
-                loss_Gmain = (-gen_logits).mean()
+                # gen_img['image'].shape = torch.Size([8, 3, 64, 64]) # PGAN value
+                gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma) # PGAN value
+                loss_Gmain = (-gen_logits).mean() # PGAN value
 
                 # Logging
                 training_stats.report('Loss/scores/fake', gen_logits)
@@ -399,9 +399,9 @@ class ProjectedGANLoss(Loss): # Anya
             with torch.autograd.profiler.record_function('Dgen_forward'):
                 #gen_img = self.run_G(gen_z, gen_c, update_emas=True)
                 gen_img, _gen_ws = self.run_G(gen_z, gen_c, swapping_prob=swapping_prob, neural_rendering_resolution=neural_rendering_resolution, update_emas=True)
-                # gen_img['image'].shape = torch.Size([8, 3, 64, 64])
-                gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma)
-                loss_Dgen = (torch.nn.functional.relu(torch.ones_like(gen_logits) + gen_logits)).mean()
+                # gen_img['image'].shape = torch.Size([8, 3, 64, 64]) # PGAN value
+                gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma) # PGAN value
+                loss_Dgen = (torch.nn.functional.relu(torch.ones_like(gen_logits) + gen_logits)).mean() # PGAN value
 
                 # Logging
                 training_stats.report('Loss/scores/fake', gen_logits)
@@ -416,10 +416,10 @@ class ProjectedGANLoss(Loss): # Anya
 
                 # Anya 415-418
                 real_img_tmp = real_img['image'].detach().requires_grad_(False)
-                real_img_tmp = {'image': real_img_tmp} # torch.Size([8, 3, 128, 128])
+                real_img_tmp = {'image': real_img_tmp} # torch.Size([8, 3, 128, 128]) # PGAN value
 
-                real_logits = self.run_D(real_img_tmp, real_c, blur_sigma=blur_sigma)
-                loss_Dreal = (torch.nn.functional.relu(torch.ones_like(real_logits) - real_logits)).mean()
+                real_logits = self.run_D(real_img_tmp, real_c, blur_sigma=blur_sigma) # PGAN value
+                loss_Dreal = (torch.nn.functional.relu(torch.ones_like(real_logits) - real_logits)).mean() # PGAN value
 
                 # Logging
                 training_stats.report('Loss/scores/real', real_logits)

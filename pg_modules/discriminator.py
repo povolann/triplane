@@ -174,7 +174,7 @@ class ProjectedDiscriminator(torch.nn.Module):
         return self.train(False)
 
     def forward(self, img, c):
-        x = img['image'] # Anya - torch.Size([8, 3, 128, 128])
+        x = img['image'] # Anya - torch.Size([8, 3, 128, 128]) # PGAN value
 
         if self.diffaug:
             x = DiffAugment(x, policy='color,translation,cutout')

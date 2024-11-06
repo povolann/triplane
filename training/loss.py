@@ -300,7 +300,7 @@ class MednerfLoss(Loss):
 
 #----------------------------------------------------------------------------
 
-class ProjectedGANLoss(Loss):
+class ProjectedGANLoss(Loss): # Anya
     def __init__(self, device, G, D, G_ema, blur_init_sigma=0, blur_fade_kimg=0,
                  augment_pipe=None, neural_rendering_resolution_initial=64, neural_rendering_resolution_final=None, neural_rendering_resolution_fade_kimg=0, gpc_reg_fade_kimg=1000, gpc_reg_prob=None, **kwargs):
         super().__init__()
@@ -341,7 +341,6 @@ class ProjectedGANLoss(Loss):
     #         with torch.autograd.profiler.record_function('blur'):
     #             f = torch.arange(-blur_size, blur_size + 1, device=img.device).div(blur_sigma).square().neg().exp2()
     #             img = upfirdn2d.filter2d(img, f / f.sum())
-
     #     logits = self.D(img, c)
     #     return logits
     
@@ -349,20 +348,13 @@ class ProjectedGANLoss(Loss):
         blur_size = np.floor(blur_sigma * 3)
         if blur_size > 0:
             with torch.autograd.profiler.record_function('blur'):
-                f = torch.arange(-blur_size, blur_size + 1, device=img['image'].device).div(blur_sigma).square().neg().exp2()
-                img['image'] = upfirdn2d.filter2d(img['image'], f / f.sum())
-
-        if self.augment_pipe is not None:
-            augmented_pair = self.augment_pipe(torch.cat([img['image'],
-                                                    torch.nn.functional.interpolate(img['image_raw'], size=img['image'].shape[2:], mode='bilinear', antialias=True)],
-                                                    dim=1))
-            img['image'] = augmented_pair[:, :img['image'].shape[1]]
-            img['image_raw'] = torch.nn.functional.interpolate(augmented_pair[:, img['image'].shape[1]:], size=img['image_raw'].shape[2:], mode='bilinear', antialias=True)
+                f = torch.arange(-blur_size, blur_size + 1, device=img.device).div(blur_sigma).square().neg().exp2()
+                img = upfirdn2d.filter2d(img, f / f.sum())
 
         logits = self.D(img, c)
         return logits
 
-    def accumulate_gradients(self, phase, real_img, real_c, gen_z, gen_c, gain, cur_nimg):
+    def accumulate_gradients(self, phase, real_img, real_c, gen_z, gen_c, gain, cur_nimg): 
         assert phase in ['Gmain', 'Greg', 'Gboth', 'Dmain', 'Dreg', 'Dboth']
         do_Gmain = (phase in ['Gmain', 'Gboth'])
         do_Dmain = (phase in ['Dmain', 'Dboth'])
@@ -381,7 +373,7 @@ class ProjectedGANLoss(Loss):
         else:
             neural_rendering_resolution = self.neural_rendering_resolution_initial
 
-        real_img = {'image': real_img, 'image_raw': real_img}
+        real_img = {'image': real_img} # torch.Size([8, 3, 128, 128])
 
         if do_Gmain:
 
@@ -389,6 +381,7 @@ class ProjectedGANLoss(Loss):
             with torch.autograd.profiler.record_function('Gmain_forward'):
                 #gen_img = self.run_G(gen_z, gen_c)
                 gen_img, _gen_ws = self.run_G(gen_z, gen_c, swapping_prob=swapping_prob, neural_rendering_resolution=neural_rendering_resolution)
+                # gen_img['image'].shape = torch.Size([8, 3, 64, 64])
                 gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma)
                 loss_Gmain = (-gen_logits).mean()
 
@@ -406,6 +399,7 @@ class ProjectedGANLoss(Loss):
             with torch.autograd.profiler.record_function('Dgen_forward'):
                 #gen_img = self.run_G(gen_z, gen_c, update_emas=True)
                 gen_img, _gen_ws = self.run_G(gen_z, gen_c, swapping_prob=swapping_prob, neural_rendering_resolution=neural_rendering_resolution, update_emas=True)
+                # gen_img['image'].shape = torch.Size([8, 3, 64, 64])
                 gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma)
                 loss_Dgen = (torch.nn.functional.relu(torch.ones_like(gen_logits) + gen_logits)).mean()
 
@@ -420,9 +414,9 @@ class ProjectedGANLoss(Loss):
             with torch.autograd.profiler.record_function('Dreal_forward'):
                 #real_img_tmp = real_img.detach().requires_grad_(False)
 
-                real_img_tmp_image = real_img['image'].detach().requires_grad_(False)
-                real_img_tmp_image_raw = real_img['image_raw'].detach().requires_grad_(False)
-                real_img_tmp = {'image': real_img_tmp_image, 'image_raw': real_img_tmp_image_raw}
+                # Anya 415-418
+                real_img_tmp = real_img['image'].detach().requires_grad_(False)
+                real_img_tmp = {'image': real_img_tmp} # torch.Size([8, 3, 128, 128])
 
                 real_logits = self.run_D(real_img_tmp, real_c, blur_sigma=blur_sigma)
                 loss_Dreal = (torch.nn.functional.relu(torch.ones_like(real_logits) - real_logits)).mean()

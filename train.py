@@ -466,6 +466,7 @@ def main(**kwargs):
     # VoxGRAF: Gf = 4000/512 (me only 256) and Gb = 2048/64, orig. EG3D 32768/512
     c.G_kwargs.channel_base = 4000
     c.G_kwargs.channel_max = 256
+    c.G_kwargs.original = False # to get rid of sr_image
 
 
     # c.D_kwargs.mapping_kwargs.num_layers = 2
@@ -488,13 +489,13 @@ def main(**kwargs):
 
     c.loss_kwargs.dual_discrimination = False # Turn off dual discrimination for now
 
-    # c.loss_kwargs = dnnlib.EasyDict(class_name='training.loss.ProjectedGANLoss')
-    # c.loss_kwargs.r1_gamma = None
-    # c.loss_kwargs.filter_mode = None
-    # c.loss_kwargs.dual_discrimination = None
-    # c.loss_kwargs.neural_rendering_resolution_initial = None
-    # c.loss_kwargs.neural_rendering_resolution_final = None
-    # # c.loss_kwargs.neural_rendering_resolution_fade_kimg = None
+    c.loss_kwargs = dnnlib.EasyDict(class_name='training.loss.ProjectedGANLoss')
+    c.loss_kwargs.r1_gamma = None
+    c.loss_kwargs.filter_mode = None
+    c.loss_kwargs.dual_discrimination = None
+    c.loss_kwargs.neural_rendering_resolution_initial = None 
+    c.loss_kwargs.neural_rendering_resolution_final = None
+    # c.loss_kwargs.neural_rendering_resolution_fade_kimg = None
 
     # Description string.
     #desc = f'{opts.cfg:s}-{dataset_name:s}-gpus{c.num_gpus:d}-batch{c.batch_size:d}-gamma{c.loss_kwargs.r1_gamma:g}'

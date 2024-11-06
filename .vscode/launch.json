@@ -13,10 +13,9 @@
             "console": "integratedTerminal",
             //"args": ["--dataset=knee", "--img_dir=/home/anya/Programs/triplane/hyp/3e-2/knee/"]
             //"args": ["--network_pkl=./networks/best_model.pkl", "--trunc=0.7", "--outdir=debug/PTI", "--cfg=drr", "--foc=1.5", "--image_in=chest_psnr"]
-            //"args": ["--outdir=./debug", "--cfg=drr", "--data=./datasets/chest_128.zip", "--gpus=1", "--batch=8", "--gamma=0.3", "--z_dim=256", "--lazy_reg=False"],
-            //"--use_mednerf=False"]
-            "args": ["--outdir=./debug", "--cfg=carla", "--data=/home/anya/Programs/eg3d/eg3d/datasets/carla_128.zip", "--gpus=1", "--batch=8",
-             "--gamma=0.3", "--z_dim=256", "--lazy_reg=False", "--tick=4", "--snap=5"],
+            "args": ["--outdir=./debug_debug", "--cfg=drr", "--data=./datasets/chest_128.zip", "--gpus=1", "--batch=8", "--gamma=0.3", "--z_dim=256", "--lazy_reg=False"]
+            //"args": ["--outdir=./debug", "--cfg=carla", "--data=/home/anya/Programs/eg3d/eg3d/datasets/carla_128.zip", "--gpus=1", "--batch=8",
+            // "--gamma=0.3", "--z_dim=256", "--lazy_reg=False", "--tick=4", "--snap=5"],
 
         }
     ]

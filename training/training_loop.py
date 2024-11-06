@@ -262,7 +262,8 @@ def training_loop(
     # elif D_kwargs['class_name'] == 'pg_modules.discriminator.ProjectedDiscriminator':
     #     loss = dnnlib.util.construct_class_by_name(device=device, G=G, G_ema=G_ema, D=D, **loss_kwargs) # subclass of training.loss.Loss # Anya - what excatly is the difference between this and the commented line above?
 
-    loss = dnnlib.util.construct_class_by_name(device=device, G=G, D=D, augment_pipe=augment_pipe, **loss_kwargs)
+    #loss = dnnlib.util.construct_class_by_name(device=device, G=G, D=D, augment_pipe=augment_pipe, **loss_kwargs) # original
+    loss = dnnlib.util.construct_class_by_name(device=device, G=G, G_ema=G_ema, D=D, **loss_kwargs) # subclass of training.loss.Loss # Anya
 
     phases = []
     for name, module, opt_kwargs, reg_interval in [('G', G, G_opt_kwargs, G_reg_interval), ('D', D, D_opt_kwargs, D_reg_interval)]:
@@ -424,31 +425,33 @@ def training_loop(
         # Save image snapshot.
         if (rank == 0) and (image_snapshot_ticks is not None) and (done or cur_tick % image_snapshot_ticks == 0):
             #out = [G_ema(z=z, c=c, noise_mode='const') for z, c in zip(grid_z, grid_c)]
-            out = [G_ema(z=z, c=c) for z, c in zip(grid_z, grid_c)]
+            out = [G_ema(z=z, c=c, neural_rendering_resolution=128) for z, c in zip(grid_z, grid_c)]
             images = torch.cat([o['image'].cpu() for o in out]).numpy()
-            images_raw = torch.cat([o['image_raw'].cpu() for o in out]).numpy()
+            if G_kwargs.original == True: # Anya - added this to save images for original GAN
+                images_raw = torch.cat([o['image_raw'].cpu() for o in out]).numpy()
+                save_image_grid(images_raw, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}_raw.png'), drange=[-1,1], grid_size=grid_size)
+            
             images_depth = -torch.cat([o['image_depth'].cpu() for o in out]).numpy()
             save_image_grid(images, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}.png'), drange=[-1,1], grid_size=grid_size)
             save_image_grid_my(images, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}_pres.png'), drange=[-1,1], grid_size=grid_size)
-            save_image_grid(images_raw, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}_raw.png'), drange=[-1,1], grid_size=grid_size)
             save_image_grid(images_depth, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}_depth.png'), drange=[images_depth.min(), images_depth.max()], grid_size=grid_size)
             # this is actually gray image, try to copy saving param for my data
 
-            #forward_cam2world_pose = LookAtPoseSampler.sample(3.14/2, 3.14/2, torch.tensor([0, 0, 0], device=device), radius=1.7, device=device) # Shapenet
-            forward_cam2world_pose = get_render_pose(radius=10.5, phi=0, theta=45).unsqueeze(0).to(device) # Carla / drr same
-            focal = 1.8660254037844388 # Shapenet = 1.025390625, Carla = 1.8660254037844388, drr = 1.5 for chest, 3.02 for knees
-            intrinsics = torch.tensor([[focal, 0, 0.5], [0, focal, 0.5], [0, 0, 1]], device=device)
-            forward_label = torch.cat([forward_cam2world_pose.reshape(-1, 16), intrinsics.reshape(-1, 9)], 1)
+            # #forward_cam2world_pose = LookAtPoseSampler.sample(3.14/2, 3.14/2, torch.tensor([0, 0, 0], device=device), radius=1.7, device=device) # Shapenet
+            # forward_cam2world_pose = get_render_pose(radius=10.5, phi=0, theta=45).unsqueeze(0).to(device) # Carla / drr same
+            # focal = 1.8660254037844388 # Shapenet = 1.025390625, Carla = 1.8660254037844388, drr = 1.5 for chest, 3.02 for knees
+            # intrinsics = torch.tensor([[focal, 0, 0.5], [0, focal, 0.5], [0, 0, 1]], device=device)
+            # forward_label = torch.cat([forward_cam2world_pose.reshape(-1, 16), intrinsics.reshape(-1, 9)], 1)
 
-            grid_ws = [G_ema.mapping(z, forward_label.expand(z.shape[0], -1)) for z, c in zip(grid_z, grid_c)]
-            out = [G_ema.synthesis(ws, c=c, noise_mode='none') for ws, c in zip(grid_ws, grid_c)]
+            # grid_ws = [G_ema.mapping(z, forward_label.expand(z.shape[0], -1)) for z, c in zip(grid_z, grid_c)]
+            # out = [G_ema.synthesis(ws, c=c, noise_mode='none') for ws, c in zip(grid_ws, grid_c)]
 
-            images = torch.cat([o['image'].cpu() for o in out]).numpy()
-            images_raw = torch.cat([o['image_raw'].cpu() for o in out]).numpy()
-            images_depth = -torch.cat([o['image_depth'].cpu() for o in out]).numpy()
-            save_image_grid(images, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}_f.png'), drange=[-1,1], grid_size=grid_size)
-            save_image_grid(images_raw, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}_raw_f.png'), drange=[-1,1], grid_size=grid_size)
-            save_image_grid(images_depth, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}_depth_f.png'), drange=[images_depth.min(), images_depth.max()], grid_size=grid_size)
+            # images = torch.cat([o['image'].cpu() for o in out]).numpy()
+            # images_raw = torch.cat([o['image_raw'].cpu() for o in out]).numpy()
+            # images_depth = -torch.cat([o['image_depth'].cpu() for o in out]).numpy()
+            # save_image_grid(images, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}_f.png'), drange=[-1,1], grid_size=grid_size)
+            # save_image_grid(images_raw, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}_raw_f.png'), drange=[-1,1], grid_size=grid_size)
+            # save_image_grid(images_depth, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}_depth_f.png'), drange=[images_depth.min(), images_depth.max()], grid_size=grid_size)
 
             #--------------------
             # # Log forward-conditioned images
